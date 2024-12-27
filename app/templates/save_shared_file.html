@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <div class="save-shared-card card p-4 shadow-lg mx-auto" style="max-width: 400px;">
+        <h2 class="text-center mb-4">保存分享的文件</h2>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div id="flash-messages-container">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        <form id="save-shared-file-form" method="POST">
+            {{ form.hidden_tag() }}
+            <div class="mb-3">
+                <label for="share_token" class="form-label">分享链接或代码</label>
+                {{ form.share_token(class="form-control form-control-lg", id="share_token", placeholder="请输入分享链接或代码") }}
+            </div>
+
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary btn-lg">保存文件</button>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+<script>
+document.getElementById('save-shared-file-form').addEventListener('submit', function(event) {
+    event.preventDefault();  // Prevent default form submission (which might be GET)
+
+    const form = this;
+    let fullUrl = form.querySelector('#share_token').value;
+
+    // Extract the share_token from the URL
+    const url = new URL(fullUrl);
+    const shareToken = url.searchParams.get('share_token');
+
+    if (!shareToken) {
+        alert('无效的分享链接，没有找到分享口令。');
+        return;
+    }
+
+    // Create a new FormData object and set only the extracted share_token
+    const formData = new FormData();
+    formData.append('share_token', shareToken);
+    formData.append('csrf_token', '{{ form.csrf_token._value() }}');  // Include CSRF token
+
+    // Use fetch to send a POST request
+    fetch('{{ url_for("main.save_shared_file") }}', {
+        method: 'POST',  // Ensure this is a POST request
+        body: formData,
+        headers: {
+            'X-CSRFToken': '{{ form.csrf_token._value() }}'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(errorData => {
+                console.error('Form submission error:', errorData);
+                throw new Error('Network response was not ok: ' + errorData.message);
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            alert('文件已成功保存到您的目录中！');
+            location.href = '{{ url_for("main.file_list") }}';  // Redirect to file list
+        } else {
+            alert(data.message || '保存失败，请检查分享链接或代码。');
+        }
+    })
+    .catch(error => {
+        alert('保存文件时发生错误，请稍后再试。');
+        console.error('Error:', error);  // Log the exact error for debugging
+    });
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    // 设置消息显示5秒后开始淡出效果
+    setTimeout(function() {
+        var flashMessages = document.getElementById('flash-messages-container');
+        if (flashMessages) {
+            var alerts = flashMessages.getElementsByClassName('alert');
+            for (var i = 0; i < alerts.length; i++) {
+                // 添加fade-out类来启动淡化效果
+                alerts[i].classList.add('.fade-out');
+            }
+            // 完全淡出1秒后，从DOM中移除消息
+            setTimeout(function() {
+                flashMessages.innerHTML = '';
+            }, 1000);  // 1秒的淡化时间
+        }
+    }, 2000);  // 5秒后开始淡化
+});
+</script>
+{% endblock %}

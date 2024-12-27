@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container text-center mt-5">
+    <h2>文件统计分析</h2>
+</div>
+
+<!-- Summary Statistics -->
+<div class="container text-center mt-4 stats-summary">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="stat-box">
+                <h4>总文件量</h4>
+                <p id="total-files" class="stat-number">0</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-box">
+                <h4>最大文件</h4>
+                <p id="largest-file" class="stat-name">N/A</p>
+                <p id="largest-file-size" class="stat-detail">0 MB</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-box">
+                <h4>总下载量</h4>
+                <p id="total-downloads" class="stat-number">0</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-box">
+                <h4>下载最多的文件</h4>
+                <p id="most-downloaded-file" class="stat-name">N/A</p>
+                <p id="most-downloaded-count" class="stat-detail">0 下载</p>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Monthly Uploads Chart -->
+<div class="container text-center mt-5">
+    <h4>每月上传文件统计</h4>
+    <div id="main" class="chart-container" style="width: 100%; height: 400px;"></div>
+</div>
+
+<!-- Word Cloud Chart -->
+<div class="container text-center mt-5">
+    <h4>文件名词云</h4>
+    <div id="wordcloud" class="chart-container" style="width: 100%; height: 400px;"></div>
+</div>
+
+<!-- Loading Spinner -->
+<div id="loading" class="text-center mt-5" style="display: none;">
+    <div class="spinner-border" role="status">
+        <span class="sr-only">加载中...</span>
+    </div>
+</div>
+
+<script>
+    // Lazy load ECharts library
+    var echartsScript = document.createElement('script');
+    echartsScript.src = "https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js";
+    echartsScript.onload = function() {
+        var wordCloudScript = document.createElement('script');
+        wordCloudScript.src = "https://cdn.jsdelivr.net/npm/echarts-wordcloud/dist/echarts-wordcloud.min.js";
+        wordCloudScript.onload = function() {
+            initializeCharts();
+        };
+        document.body.appendChild(wordCloudScript);
+    };
+    document.body.appendChild(echartsScript);
+
+    function initializeCharts() {
+        var myChart = echarts.init(document.getElementById('main'), 'light');
+        var wordcloudChart = echarts.init(document.getElementById('wordcloud'), 'light');
+
+        // Show loading spinner
+        document.getElementById('loading').style.display = 'block';
+
+        fetch("/upload_stats")
+            .then(response => response.json())
+            .then(data => {
+                // Remove loading spinner
+                document.getElementById('loading').style.display = 'none';
+
+                // Update total files and downloads
+                document.getElementById('total-files').textContent = data.total_files;
+                document.getElementById('total-downloads').textContent = data.total_downloads;
+
+                // Update most downloaded file info
+                document.getElementById('most-downloaded-file').textContent = data.most_downloaded.name;
+                document.getElementById('most-downloaded-count').textContent = data.most_downloaded.downloads + " 下载";
+
+                // Update largest file info
+                document.getElementById('largest-file').textContent = data.largest_file.name;
+                document.getElementById('largest-file-size').textContent = (data.largest_file.size / (1024 * 1024)).toFixed(2) + " MB";
+
+                // Monthly uploads chart configuration
+                var uploadOption = {
+                    title: {
+                        text: '每月上传文件统计',
+                        left: 'center',
+                        textStyle: {
+                            fontSize: 18,
+                            fontWeight: 'bold'
+                        }
+                    },
+                    tooltip: {},
+                    grid: {
+                        left: '3%',
+                        right: '4%',
+                        bottom: '3%',
+                        containLabel: true
+                    },
+                    xAxis: {
+                        type: 'category',
+                        data: Object.keys(data.monthly_uploads),
+                        axisLabel: {
+                            rotate: 45,
+                            interval: 0
+                        }
+                    },
+                    yAxis: {
+                        type: 'value'
+                    },
+                    series: [{
+                        name: '上传量',
+                        type: 'bar',
+                        data: Object.values(data.monthly_uploads),
+                        itemStyle: {
+                            color: '#73C9E6'
+                        }
+                    }]
+                };
+
+                // Word cloud chart configuration
+                var wordcloudOption = {
+                    title: {
+                        text: '文件名词云',
+                        left: 'center',
+                        textStyle: {
+                            fontSize: 18,
+                            fontWeight: 'bold'
+                        }
+                    },
+                    tooltip: {
+                        show: true
+                    },
+                    series: [{
+                        type: 'wordCloud',
+                        shape: 'circle',
+                        gridSize: 10,
+                        sizeRange: [12, 60],
+                        rotationRange: [-90, 90],
+                        textStyle: {
+                            normal: {
+                                color: function () {
+                                    return 'rgb(' + [
+                                        Math.round(Math.random() * 255),
+                                        Math.round(Math.random() * 255),
+                                        Math.round(Math.random() * 255)
+                                    ].join(',') + ')';
+                                },
+                                textBorderColor: '#000',
+                                textBorderWidth: 2,
+                                textShadowBlur: 10,
+                                textShadowColor: 'rgba(0, 0, 0, 0.5)'
+                            },
+                            emphasis: {
+                                shadowBlur: 10,
+                                shadowColor: '#383'
+                            }
+                        },
+                        data: data.wordcloud_data.map(function (item) {
+                            return {
+                                name: item.name,
+                                value: item.value,
+                            };
+                        })
+                    }]
+                };
+
+                // Render the charts
+                myChart.setOption(uploadOption);
+                wordcloudChart.setOption(wordcloudOption);
+            })
+            .catch(error => {
+                console.error('获取数据时出错:', error);
+                document.getElementById('loading').innerHTML = '<p class="text-danger">数据加载失败，请稍后再试。</p>';
+            });
+    }
+</script>
+
+<style>
+    /* Ensure charts are responsive */
+    .chart-container {
+        width: 100%;
+        height: 400px;
+        margin: auto;
+    }
+    .stats-summary {
+        margin-bottom: 30px;
+    }
+    .stat-box {
+        background-color: #f7f9fc;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        margin: 10px;
+    }
+    .stat-number, .stat-name {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #007bff;
+    }
+    .stat-detail {
+        font-size: 1.2rem;
+        color: #333;
+    }
+    h4 {
+        margin-top: 20px;
+        font-weight: bold;
+    }
+</style>
+
+{% endblock %}

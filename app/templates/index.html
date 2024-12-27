@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .fade-out {
+        opacity: 0;
+        transition: opacity 1s ease-out;
+    }
+
+    .alert {
+        opacity: 1;
+        transition: opacity 1s ease-in;
+    }
+</style>
+    <!-- Flash Messages -->
+    <div id="flash-messages-container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div id="flash-messages">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+    </div>
+<div class="container mt-5 text-center">
+    <div class="row">
+        <!-- 欢迎信息和说明 -->
+        <div class="col-12">
+            <h1 class="display-4">欢迎使用FishStone Cloud</h1>
+            <p class="lead">您的文件，您的数据，随时随地轻松管理。</p>
+            {% if current_user.is_authenticated %}
+                <p class="text-muted">欢迎回来, {{ current_user.email }}</p>
+            {% else %}
+                <p class="text-muted">请登录或注册以开始使用。</p>
+            {% endif %}
+        </div>
+    </div>
+    <!-- 用户登录后的模块 -->
+    {% if current_user.is_authenticated %}
+        <div class="row justify-content-center mt-5">
+            <!-- 我的文件按钮 -->
+            <div class="col-md-4 col-lg-3 mb-4 d-flex justify-content-center">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">我的文件</h5>
+                        <p class="card-text">查看并管理您上传的文件。</p>
+                        <a href="{{ url_for('main.file_list') }}" class="btn btn-primary mt-auto">查看</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 上传文件按钮 -->
+            <div class="col-md-4 col-lg-3 mb-4 d-flex justify-content-center">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">上传文件</h5>
+                        <p class="card-text">安全上传您的文件并随时访问它们。</p>
+                        <a href="{{ url_for('main.upload_file') }}" class="btn btn-success mt-auto">上传</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 转存文件按钮 -->
+            <div class="col-md-4 col-lg-3 mb-4 d-flex justify-content-center">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">转存文件</h5>
+                        <p class="card-text">转存他人分享的文件到您的云盘。</p>
+                        <a href="{{ url_for('main.save_shared_file') }}" class="btn btn-warning mt-auto">转存</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 数据统计按钮 -->
+            <div class="col-md-4 col-lg-3 mb-4 d-flex justify-content-center">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">数据统计</h5>
+                        <p class="card-text">查看您上传和下载的统计数据。</p>
+                        <a href="{{ url_for('main.view_stats') }}" class="btn btn-info mt-auto">查看统计</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <!-- 用户未登录时的模块 -->
+        <div class="row justify-content-center mt-5">
+            <!-- 登录按钮 -->
+            <div class="col-md-4 col-lg-3 mb-4 d-flex justify-content-center">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">登录</h5>
+                        <p class="card-text">已有账户？立即登录。</p>
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-primary mt-auto">登录</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 注册按钮 -->
+            <div class="col-md-4 col-lg-3 mb-4 d-flex justify-content-center">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">注册</h5>
+                        <p class="card-text">还没有账户？点击这里注册。</p>
+                        <a href="{{ url_for('auth.register') }}" class="btn btn-success mt-auto">注册</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- JavaScript for flash message fade-out effect -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 设置消息显示5秒后开始淡出效果
+    setTimeout(function() {
+        var flashMessages = document.getElementById('flash-messages-container');
+        if (flashMessages) {
+            var alerts = flashMessages.getElementsByClassName('alert');
+            for (var i = 0; i < alerts.length; i++) {
+                // 添加fade-out类来启动淡化效果
+                alerts[i].classList.add('.fade-out');
+            }
+            // 完全淡出1秒后，从DOM中移除消息
+            setTimeout(function() {
+                flashMessages.innerHTML = '';
+            }, 1000);  // 1秒的淡化时间
+        }
+    }, 2000);  // 5秒后开始淡化
+});
+</script>
+<!-- CSS for fade-out animation -->
+<!-- 样式改进 -->
+<style>
+    .card {
+        width: 100%;  /* 卡片占满父元素的宽度 */
+        max-width: 280px; /* 设置卡片最大宽度 */
+        transition: transform 0.2s ease-in-out;
+    }
+    .card:hover {
+        transform: scale(1.05);  /* 悬停时放大 */
+    }
+    .btn {
+        font-size: 1.1rem;
+    }
+    .row {
+        margin-top: 20px;  /* 调整行间距 */
+    }
+</style>
+
+{% endblock %}

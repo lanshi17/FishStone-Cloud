@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <div class="upload-card card p-4 shadow-lg mx-auto" style="max-width: 400px;">
+        <h2 class="text-center mb-4">上传文件</h2>
+
+        <form id="upload-form" method="POST" enctype="multipart/form-data">
+            {{ form.hidden_tag() }}
+            <div class="mb-3 text-center">
+                <label for="fileInput" class="form-label upload-label">选择文件</label>
+                {{ form.files(class="form-control form-control-lg", id="fileInput", multiple="multiple") }}
+            </div>
+
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary btn-lg">上传文件</button>
+            </div>
+
+            <div class="text-center mt-3">
+                <a href="{{ url_for('main.file_list') }}" class="btn btn-link">查看我的文件</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Add a progress bar -->
+<div class="container mt-4 text-center">
+    <div class="progress" style="height: 20px;">
+        <div id="uploadProgress" class="progress-bar bg-success" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+    </div>
+</div>
+
+<script>
+    const uploadForm = document.getElementById('upload-form');
+    const fileInput = document.getElementById('fileInput');
+    const progressBar = document.getElementById('uploadProgress');
+
+    uploadForm.addEventListener('submit', function(e) {
+        e.preventDefault(); // Prevent the form from submitting the traditional way
+
+        const formData = new FormData(uploadForm);
+        const xhr = new XMLHttpRequest();
+
+        xhr.open('POST', '{{ url_for("main.upload_file") }}', true);
+
+        // Update progress bar during file upload
+        xhr.upload.addEventListener('progress', function(e) {
+            if (e.lengthComputable) {
+                const percentComplete = (e.loaded / e.total) * 100;
+                progressBar.style.width = percentComplete + '%';
+                progressBar.innerText = Math.round(percentComplete) + '%';
+            }
+        });
+
+        // Handle success or failure
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                progressBar.classList.add('bg-success');
+                progressBar.innerText = '上传成功';
+                alert('文件上传成功！');
+                location.reload(); // Reload the page
+            } else {
+                progressBar.classList.add('bg-danger');
+                progressBar.innerText = '上传失败';
+                alert('文件上传失败，请重试');
+            }
+        };
+
+        xhr.send(formData);
+    });
+</script>
+{% endblock %}

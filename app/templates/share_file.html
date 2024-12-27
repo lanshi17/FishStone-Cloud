@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+    <div class="container mt-5">
+        <h2>分享文件: {{ file.filename }}</h2>
+        <a href="javascript:history.back()" class="btn btn-secondary">返回上一层</a>
+        <p>您可以通过以下链接分享您的文件：</p>
+
+        {% if share_link %}
+            <div class="alert alert-info">
+                <strong>分享链接：</strong>
+                <a href="{{ share_link }}" target="_blank">{{ share_link }}</a>
+            </div>
+        {% else %}
+            <form method="POST" action="{{ url_for('main.share_file', file_id=file.id) }}">
+                {{ form.hidden_tag() }}
+                <div class="form-group">
+                    <label for="filename">文件名</label>
+                    <input type="text" class="form-control" value="{{ file.filename }}" readonly>
+                </div>
+                <button type="submit" class="btn btn-primary">生成分享链接</button>
+            </form>
+        {% endif %}
+    </div>
+{% endblock %}

@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <h3 class="text-center mb-4">登录</h3>
+            <!-- 切换登录方式的选项卡 -->
+            <ul class="nav nav-tabs mb-4" id="login-method-tabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="password-login-tab" data-bs-toggle="tab" data-bs-target="#password-login" type="button" role="tab" aria-controls="password-login" aria-selected="true">密码登录</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="code-login-tab" data-bs-toggle="tab" data-bs-target="#code-login" type="button" role="tab" aria-controls="code-login" aria-selected="false">验证码登录</button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="login-method-content">
+                <!-- 密码登录表单 -->
+                <div class="tab-pane fade show active" id="password-login" role="tabpanel" aria-labelledby="password-login-tab">
+                    <form method="POST" action="{{ url_for('auth.login') }}">
+                        {{ login_form.hidden_tag() }}
+
+                        <!-- 电子邮件 -->
+                        <div class="form-group mb-3">
+                            <label for="email">电子邮件</label>
+                            {{ login_form.email(class="form-control", id="email", placeholder="请输入您的电子邮件地址") }}
+                            {% if login_form.email.errors %}
+                                <small class="text-danger">{{ login_form.email.errors[0] }}</small>
+                            {% endif %}
+                        </div>
+
+                        <!-- 密码 -->
+                        <div class="form-group mb-3">
+                            <label for="password">密码</label>
+                            {{ login_form.password(class="form-control", id="password", placeholder="请输入您的密码") }}
+                            {% if login_form.password.errors %}
+                                <small class="text-danger">{{ login_form.password.errors[0] }}</small>
+                            {% endif %}
+                        </div>
+
+                        <!-- 记住我 -->
+                        <div class="form-check mb-3">
+                            {{ login_form.remember_me(class="form-check-input", id="remember_me") }}
+                            <label class="form-check-label" for="remember_me">记住我</label>
+                        </div>
+
+                        <!-- 提交按钮 -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-block">登录</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- 验证码登录表单 -->
+                <div class="tab-pane fade" id="code-login" role="tabpanel" aria-labelledby="code-login-tab">
+                    <form method="POST" action="{{ url_for('auth.email_login') }}">
+                        {{ code_login_form.hidden_tag() }}
+
+                        <!-- 电子邮件 -->
+                        <div class="form-group mb-3">
+                            <label for="email">电子邮件</label>
+                            {{ code_login_form.email(class="form-control", id="email", placeholder="请输入您的电子邮件地址") }}
+                            {% if code_login_form.email.errors %}
+                                <small class="text-danger">{{ code_login_form.email.errors[0] }}</small>
+                            {% endif %}
+                        </div>
+
+                        <!-- 验证码 -->
+                        <div class="form-group mb-3">
+                            <label for="verification_code">验证码</label>
+                            {{ code_login_form.verification_code(class="form-control", id="verification_code", placeholder="请输入验证码") }}
+                            {% if code_login_form.verification_code.errors %}
+                                <small class="text-danger">{{ code_login_form.verification_code.errors[0] }}</small>
+                            {% endif %}
+                        </div>
+
+                        <!-- 发送验证码按钮 -->
+                        <div class="mb-3">
+                            <button type="button" id="send-code-btn" class="btn btn-secondary">发送验证码</button>
+                        </div>
+
+                        <!-- 提交按钮 -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-block">验证码登录</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 忘记密码和注册链接 -->
+            <div class="text-center mt-3">
+                <a href="{{ url_for('auth.reset_password_request') }}">忘记密码?</a>
+                <br>
+                <a href="{{ url_for('auth.register') }}">还没有账户? 注册</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 发送验证码的逻辑
+    document.getElementById('send-code-btn').addEventListener('click', function() {
+        var emailField = document.getElementById('email');
+        var email = emailField.value;
+
+        if (!email) {
+            alert('请先输入您的电子邮件地址');
+            return;
+        }
+
+        var formData = new FormData();
+        formData.append('email', email);
+
+        fetch('{{ url_for("auth.send_login_code") }}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': '{{ code_login_form.csrf_token._value() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            var messageDiv = document.getElementById('message');
+            if (data.success) {
+                alert('验证码已发送');
+                startCooldown(); // 开始冷却
+            } else {
+                alert('发送验证码失败：' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('发送验证码时出错，请稍后重试。');
+        });
+    });
+
+    function startCooldown() {
+        cooldown = true;
+        let countdown = 60; // 冷却时间为60秒
+        const sendCodeBtn = document.getElementById('send-code-btn');
+        sendCodeBtn.disabled = true; // 禁用按钮
+
+        const timer = setInterval(() => {
+            countdown--;
+            sendCodeBtn.textContent = `等待 ${countdown} 秒`;
+
+            if (countdown <= 0) {
+                clearInterval(timer);
+                sendCodeBtn.textContent = "发送验证码";
+                sendCodeBtn.disabled = false;
+                cooldown = false;
+            }
+        }, 1000); // 每秒更新一次
+    }
+</script>
+
+{% endblock %}

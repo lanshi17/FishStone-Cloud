@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="JavaScriptLibraryMappings">
+    <file url="file://$PROJECT_DIR$" libraries="{@popperjs/core, @sweetalert2/theme-dark, bootstrap, chart.js, echarts, echarts-wordcloud, jquery-3.5.1.slim, jquery.slim, popper}" />
+  </component>
+</project>
