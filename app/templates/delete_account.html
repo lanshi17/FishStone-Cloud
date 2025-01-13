@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="text-center mb-4">注销账户</h2>
+
+    <a href="javascript:history.back()" class="btn btn-secondary mb-3">返回上一层</a>
+
+    <p class="text-danger">请注意：账户一旦被删除，所有数据将被永久删除，无法恢复。</p>
+    <p>您确定要删除您的账户吗？</p>
+
+    <!-- 提示信息 -->
+    <div id="message" class="mt-3"></div>
+
+    <!-- 发送验证码的按钮 -->
+    <button type="button" id="send-code-btn" class="btn btn-secondary mb-3">发送验证码</button>
+    <p id="countdown-timer" style="display: none;">请等待 <span id="timer">60</span> 秒后再发送。</p>
+
+    <!-- 删除账户的表单 -->
+    <form method="POST" action="{{ url_for('auth.delete_account') }}" id="delete-account-form" class="mt-3">
+        {{ form.hidden_tag() }}
+
+        <!-- 密码输入框 -->
+        <div class="form-group mb-3">
+            <label for="password" class="form-label">密码</label>
+            {{ form.password(class="form-control", id="password", placeholder="请输入您的密码") }}
+        </div>
+
+        <!-- 验证码输入框 -->
+        <div class="form-group mb-3">
+            <label for="verification_code" class="form-label">验证码</label>
+            {{ form.verification_code(class="form-control", id="verification_code", placeholder="请输入收到的验证码") }}
+        </div>
+
+        <!-- 删除账户按钮 -->
+        <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-danger btn-block">删除账户</button>
+        </div>
+    </form>
+</div>
+<script>
+document.getElementById('send-code-btn').addEventListener('click', function() {
+    var formData = new FormData();
+    formData.append('send_code', '1');
+
+    fetch('{{ url_for("auth.send_delete_account_code") }}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': '{{ form.csrf_token._value() }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        var messageDiv = document.getElementById('message');
+        if (data.success) {
+            messageDiv.innerHTML = '<div class="alert alert-success">' + data.message + '</div>';
+            startCooldown();
+        } else {
+            messageDiv.innerHTML = '<div class="alert alert-danger">' + data.message + '</div>';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        var messageDiv = document.getElementById('message');
+        messageDiv.innerHTML = '<div class="alert alert-danger">发送验证码时出错，请稍后重试。</div>';
+    });
+
+    function startCooldown() {
+        let timeLeft = 60;
+        const timerSpan = document.getElementById('timer');
+        document.getElementById('countdown-timer').style.display = 'block';
+        document.getElementById('send-code-btn').disabled = true;
+        timerSpan.innerText = timeLeft;
+
+        const countdown = setInterval(() => {
+            timeLeft--;
+            timerSpan.innerText = timeLeft;
+
+            if (timeLeft <= 0) {
+                clearInterval(countdown);
+                document.getElementById('send-code-btn').disabled = false;
+                document.getElementById('send-code-btn').innerText = '发送验证码';
+                document.getElementById('countdown-timer').style.display = 'none';
+            }
+        }, 1000);
+    }
+});
+
+document.getElementById('delete-account-form').addEventListener('submit', function(event) {
+    event.preventDefault();
+
+    var form = event.target;
+    var formData = new FormData(form);
+
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': '{{ form.csrf_token._value() }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        var messageDiv = document.getElementById('message');
+        if (data.success) {
+            alert(data.message);
+            window.location.href = '{{ url_for("main.index") }}'; // 成功后重定向
+        } else {
+            messageDiv.innerHTML = '<div class="alert alert-danger">' + data.message + '</div>';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        var messageDiv = document.getElementById('message');
+        messageDiv.innerHTML = '<div class="alert alert-danger">删除账户时出错，请稍后重试。</div>';
+    });
+});
+</script>
+
+{% endblock %}

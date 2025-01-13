@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <h2>我的文件</h2>
+<div class="d-flex justify-content-between mb-3">
+    <a href="javascript:history.back()" class="btn btn-secondary">返回上一层</a>
+    <a href="{{ url_for('main.index') }}" class="btn btn-primary">返回主页</a>
+</div>
+
+    <!-- 批量操作按钮 -->
+    <div class="d-flex justify-content-between mb-3">
+        <div>
+            <button type="button" id="batch-download-btn" class="btn btn-primary">批量下载</button>
+            <button type="button" id="batch-share-btn" class="btn btn-info">批量分享</button>
+            <button type="button" id="batch-delete-btn" class="btn btn-danger">批量删除</button>
+        </div>
+        <div>
+            <!-- 跳转至页数 -->
+            <label for="page-jump" class="form-label">跳转至页数</label>
+            <input type="number" id="page-jump" class="form-control d-inline-block" style="width: 70px;" min="1" max="{{ pagination.pages }}">
+            <button type="button" id="jump-page-btn" class="btn btn-primary">跳转</button>
+        </div>
+    </div>
+
+   <!-- 闪现消息 -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div id="flash-messages">
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    {% endwith %}
+    <!-- 文件列表 -->
+    <form id="file-actions-form" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th><input type="checkbox" id="select-all"></th> <!-- 全选框 -->
+                    <th>文件名</th>
+                    <th>大小</th>
+                    <th>上传时间</th>
+                    <th>下载次数</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody id="file-list">
+                {% for file in files %}
+                <tr>
+                    <td><input type="checkbox" class="file-checkbox" value="{{ file.id }}"></td>
+                    <td>{{ file.filename }}</td>
+                    <td>{{ file.get_formatted_size() }}</td>
+                    <td>{{ file.created_at }}</td>
+                    <td>{{ file.download_count }}</td>
+                    <td>
+                        <button type="button" class="btn btn-primary download-btn" data-file-id="{{ file.id }}">下载</button>
+                        <button type="button" class="btn btn-info share-btn" data-file-id="{{ file.id }}">分享</button>
+                        <button type="button" class="btn btn-danger delete-btn" data-file-id="{{ file.id }}">删除</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </form>
+
+    <!-- Pagination Controls -->
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('main.file_list', page=1) }}">首页</a>
+            </li>
+            <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('main.file_list', page=pagination.prev_num) }}">上一页</a>
+            </li>
+            <li class="page-item active"><a class="page-link">{{ pagination.page }}</a></li>
+            <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('main.file_list', page=pagination.next_num) }}">下一页</a>
+            </li>
+            <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('main.file_list', page=pagination.pages) }}">末页</a>
+            </li>
+        </ul>
+    </nav>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 设置消息显示5秒后开始淡出效果
+    setTimeout(function() {
+        var flashMessages = document.getElementById('flash-messages-container');
+        if (flashMessages) {
+            var alerts = flashMessages.getElementsByClassName('alert');
+            for (var i = 0; i < alerts.length; i++) {
+                // 添加fade-out类来启动淡化效果
+                alerts[i].classList.add('.fade-out');
+            }
+            // 完全淡出1秒后，从DOM中移除消息
+            setTimeout(function() {
+                flashMessages.innerHTML = '';
+            }, 1000);  // 1秒的淡化时间
+        }
+    }, 2000);  // 5秒后开始淡化
+})
+// 全选/取消全选
+document.getElementById('select-all').addEventListener('change', function () {
+    const checkboxes = document.querySelectorAll('.file-checkbox');
+    checkboxes.forEach(checkbox => checkbox.checked = this.checked);
+})
+
+// 获取选中的文件ID列表
+function getSelectedFiles() {
+    const selectedFiles = [];
+    document.querySelectorAll('.file-checkbox:checked').forEach(checkbox => {
+        selectedFiles.push(checkbox.value);
+    });
+    return selectedFiles;
+}
+
+// 批量分享
+document.getElementById('batch-share-btn').addEventListener('click', function() {
+    const selectedFiles = getSelectedFiles();
+    if (selectedFiles.length === 0) {
+        alert('请选择要分享的文件');
+        return;
+    }
+
+    selectedFiles.forEach(fileId => {
+        fetch(`/share/${fileId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}' // CSRF 保护
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('文件分享成功,已复制到剪贴板'+data.share_link) ;
+                <!--自动复制到剪贴板-->
+                var oInput = document.createElement('input');
+                oInput.value = data.share_link;
+                document.body.appendChild(oInput);
+                oInput.select(); // 选择对象
+                document.execCommand("Copy"); // 执行浏览器复制命令
+                oInput.className = 'oInput';
+                oInput.style.display = 'none';
+            } else {
+                alert(data.message || '文件分享失败');
+            }
+        })
+        .catch(error => console.error('分享文件过程中出现错误:', error));
+    });
+})
+// 批量下载
+document.getElementById('batch-download-btn').addEventListener('click', function() {
+    const selectedFiles = getSelectedFiles();
+    if (selectedFiles.length === 0) {
+        alert('请选择要下载的文件');
+        return;
+    }
+
+    selectedFiles.forEach(fileId => {
+        window.location.href = `/download/${fileId}`;  // 重定向到下载链接
+    });
+})
+// 批量删除
+document.getElementById('batch-delete-btn').addEventListener('click', function() {
+    const selectedFiles = getSelectedFiles();
+    if (selectedFiles.length === 0) {
+        alert('请选择要删除的文件');
+        return;
+    }
+
+    if (!confirm('确定要删除选中的文件吗？')) return;
+
+    fetch('/batch_delete', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ file_ids: selectedFiles })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('文件删除成功');
+            location.reload();
+        } else {
+            alert(data.message || '文件删除失败');
+        }
+    })
+    .catch(error => console.error('删除文件过程中出现错误:', error));
+})
+
+// 单个文件删除
+document.querySelectorAll('.delete-btn').forEach(button => {
+    button.addEventListener('click', function() {
+        const fileId = this.getAttribute('data-file-id');
+        if (confirm("确定要删除这个文件吗？")) {
+            fetch(`/delete/${fileId}`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('文件删除成功');
+                    location.reload();
+                } else {
+                    alert(data.message || '文件删除失败');
+                }
+            })
+            .catch(error => console.error('删除文件过程中出现错误:', error));
+        }
+    });
+})
+
+// 单个文件分享
+document.querySelectorAll('.share-btn').forEach(button => {
+    button.addEventListener('click', function() {
+        const fileId = this.getAttribute('data-file-id');
+        fetch(`/share/${fileId}`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('文件分享成功,已复制到剪贴板'+data.share_link) ;
+                <!--自动复制到剪贴板-->
+                var oInput = document.createElement('input');
+                oInput.value = data.share_link;
+                document.body.appendChild(oInput);
+                oInput.select(); // 选择对象
+                document.execCommand("Copy"); // 执行浏览器复制命令
+                oInput.className = 'oInput';
+                oInput.style.display = 'none';
+            } else {
+                alert(data.message || '文件分享失败');
+            }
+        })
+        .catch(error => console.error('分享文件过程中出现错误:', error));
+    });
+})
+// 单个文件下载
+document.querySelectorAll('.download-btn').forEach(button => {
+    button.addEventListener('click', function() {
+        const fileId = this.getAttribute('data-file-id');
+        window.location.href = `/download/${fileId}`;
+    });
+})
+// Handle jump to page
+document.getElementById('jump-page-btn').addEventListener('click', function() {
+    const page = document.getElementById('page-jump').value;
+    const maxPage = {{ pagination.pages }};  // Total number of pages from the backend
+
+    // Ensure the input is a valid number and within range
+    if (!page || isNaN(page) || page < 1 || page > maxPage) {
+        alert(`请输入有效的页数 (1 到 ${maxPage})`);
+        return;
+    }
+
+    // Redirect to the selected page
+    window.location.href = `/files/page/${page}`;
+});
+
+
+</script>
+{% endblock %}

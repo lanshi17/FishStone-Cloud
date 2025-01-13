@@ -1,0 +1,157 @@
+/* Unified Button Styling */
+.btn {
+    display: inline-block;
+    padding: 12px 24px;
+    color: white;
+    text-decoration: none;
+    border-radius: 30px;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+}
+
+.btn-primary {
+    background-color: #4a90e2;
+    border-color: #4a90e2;
+}
+
+.btn-primary:hover {
+    background-color: #357ABD;
+}
+
+.btn-info {
+    background-color: #17a2b8;
+    border-color: #17a2b8;
+}
+
+.btn-info:hover {
+    background-color: #138496;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+}
+
+/* Link Button Styling */
+.btn-link {
+    color: #4a90e2;
+    font-size: 1rem;
+    transition: color 0.3s ease;
+}
+
+.btn-link:hover {
+    color: #357ABD;
+}
+/* Unified Form Control Styling */
+.form-control {
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    padding: 12px;
+    font-size: 1rem;
+    margin-bottom: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+}
+
+/* Form Label */
+.form-label {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #666;
+}
+/* Responsive Design Enhancements */
+@media (max-width: 768px) {
+    .card-container, .upload-card, .save-shared-card {
+        width: 100%;
+        padding: 30px;
+    }
+
+    h2 {
+        font-size: 1.75rem;
+    }
+
+    h4 {
+        font-size: 1.25rem;
+    }
+
+    .chart-container {
+        height: 300px;
+    }
+}
+/* Enhanced Body Background for Modern Look */
+body {
+    background: linear-gradient(135deg, #f0f4f8 25%, #e0eafc 100%);
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    padding: 0;
+}
+/* Modern Card Styling */
+.card, .upload-card, .save-shared-card {
+    background-color: #fff;
+    border-radius: 12px;
+    padding: 40px 20px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease-in-out;
+}
+
+.card:hover, .upload-card:hover, .save-shared-card:hover {
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+    transform: translateY(-5px);
+}
+/* Unified Typography */
+h2, h4 {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+p {
+    color: #666;
+    line-height: 1.6;
+}
+
+h2 {
+    font-size: 2rem;
+    margin-bottom: 20px;
+}
+
+h4 {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+/* Responsive Typography */
+@media (max-width: 768px) {
+    h2 {
+        font-size: 1.75rem;
+    }
+
+    h4 {
+        font-size: 1.25rem;
+    }
+}
+/* Enhanced Loading Spinner */
+#loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100px;
+}
+
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+    color: #007bff;
+}
+
+.spinner-border::before {
+    border-width: 0.25em;
+}

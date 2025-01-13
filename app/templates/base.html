@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<meta charset="UTF-8">
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}FishStone Cloud{% endblock %}</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+    <!-- Bootstrap CSS (for styling and layout) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+
+    <!-- Link to custom CSS file -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+
+    {% block head %}
+    <!-- Additional head elements (e.g., page-specific styles) -->
+    {% endblock %}
+</head>
+<body>
+    <!-- Header / Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('main.index') }}">
+                <img src="{{ url_for('static', filename='images/logo.ico') }}" alt="FishStone Cloud" width="64" height="64">
+               FishStone Cloud
+            </a>
+
+            <!-- Collapsible menu button for mobile -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('main.file_list') }}">我的文件</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('main.upload_file') }}">上传文件</a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                {{ current_user.email }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                <li><a class="dropdown-item" href="{{ url_for('auth.change_password') }}">修改密码</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('auth.change_email') }}">修改邮箱</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('auth.delete_account') }}">注销账户</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">退出登录</a></li>
+                            </ul>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('auth.login') }}">登录</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('auth.register') }}">注册</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <main class="container mt-5">
+        {% block content %}
+        {% endblock %}
+    </main>
+    <!-- Footer -->
+    <footer class="footer bg-light mt-auto py-3">
+        <div class="container">
+            <!--<p class="text-center mb-0">网站备案号：<a href="https://beian.miit.gov.cn" target="_blank">湘ICP备2023035150号-1</a></p>-->
+            <p class="text-center mb-0">如有问题,请联系微信公众号</p>
+            <div class="text-center">
+                <img src="{{ url_for('static', filename='images/wechat_qr.png') }}" alt="WeChat QR Code" width="80">
+            </div>
+        </div>
+    </footer>
+    <!-- 自动淡化Flash消息的JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 设置消息显示5秒后开始淡出效果
+            setTimeout(function() {
+                var flashMessages = document.getElementById('flash-messages-container');
+                if (flashMessages) {
+                    var alerts = flashMessages.getElementsByClassName('alert');
+                    for (var i = 0; i < alerts.length; i++) {
+                        // 添加fade-out类来启动淡化效果
+                        alerts[i].classList.add('fade-out');
+                    }
+                    // 完全淡出1秒后，从DOM中移除消息
+                    setTimeout(function() {
+                        flashMessages.innerHTML = '';
+                    }, 1000);  // 1秒的淡化时间
+                }
+            }, 2000);  // 5秒后开始淡化
+        });
+    </script>
+
+    <!-- CSS for fade-out animation -->
+    <style>
+        .fade-out {
+            opacity: 0;
+            transition: opacity 1s ease-out;
+        }
+    </style>
+    <!-- Bootstrap JS (for interactivity like navbar toggling, dropdowns, etc.) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    {% block scripts %}
+    <!-- Additional page-specific scripts -->
+    {% endblock %}
+</body>
+</html>
+

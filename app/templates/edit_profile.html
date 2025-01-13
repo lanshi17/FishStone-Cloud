@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>编辑个人资料</h2>
+    <form method="POST" id="edit-profile-form">
+        {{ form.hidden_tag() }}
+        <div class="mb-3">
+            {{ form.username.label(class="form-label") }}
+            {{ form.username(class="form-control", placeholder="输入用户名") }}
+            {% for error in form.username.errors %}
+                <div class="text-danger">{{ error }}</div>
+            {% endfor %}
+        </div>
+        <div class="mb-3">
+            {{ form.email.label(class="form-label") }}
+            {{ form.email(class="form-control", placeholder="输入邮箱") }}
+            {% for error in form.email.errors %}
+                <div class="text-danger">{{ error }}</div>
+            {% endfor %}
+        </div>
+        <button type="submit" class="btn btn-primary">更新</button>
+    </form>
+</div>
+
+<script>
+document.querySelector('#edit-profile-form').addEventListener('submit', function(event) {
+    event.preventDefault();
+    const form = event.target;
+    const formData = new FormData(form);
+
+    fetch(form.action, {
+        method: form.method,
+        body: formData,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token() }}'
+        }
+    })
+    .then(response => {
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            throw new Error('Received non-JSON response');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            alert('个人资料更新成功');
+            form.reset();
+        } else {
+            alert(data.message || '个人资料更新失败');
+        }
+    })
+    .catch(error => {
+        alert('更新过程中出现错误，请稍后重试。错误代码为: ' + error.message);
+    });
+});
+</script>
+{% endblock %}

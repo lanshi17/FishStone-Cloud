@@ -1,0 +1,56 @@
+/* General page styling */
+body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    background-color: #f5f7fa;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 0;
+    background-color: #fff;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.header img {
+    height: 50px;
+}
+
+.header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.header a {
+    text-decoration: none;
+    color: #1a73e8;
+    margin-right: 20px;
+    font-weight: bold;
+}
+
+/* Footer styling */
+.footer {
+    text-align: center;
+    padding: 20px 0;
+    color: #aaa;
+}
+
+.footer a {
+    color: #1a73e8;
+    text-decoration: none;
+}
+
+.footer img {
+    width: 150px;
+    margin-top: 10px;
+}

@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <h2>注册</h2>
+
+            <!-- 显示闪现消息 -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="关闭"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- 注册表单 -->
+            <form method="POST" id="register-form">
+                {{ form.hidden_tag() }}
+
+                <!-- 邮箱输入 -->
+                <div class="mb-3">
+                    <label for="email" class="form-label">邮箱地址</label>
+                    {{ form.email(class="form-control", placeholder="输入您的邮箱") }}
+                </div>
+
+                <!-- 验证码输入 -->
+                <div class="mb-3" id="verification-code-field" style="display:none;">
+                    <label for="verification_code" class="form-label">验证码</label>
+                    {{ form.verification_code(class="form-control", placeholder="输入验证码") }}
+                </div>
+
+                <!-- 密码输入 -->
+                <div class="mb-3" id="password-field" style="display:none;">
+                    <label for="password" class="form-label">密码</label>
+                    {{ form.password(class="form-control", placeholder="设置密码") }}
+                </div>
+
+                <div class="d-grid gap-3">
+                    <button type="button" class="btn btn-secondary" id="send-code-btn">发送验证码</button>
+                    <button type="submit" class="btn btn-primary" id="register-btn" style="display: none;">注册</button>
+                </div>
+
+                <p id="countdown-timer" class="mt-2 text-muted" style="display:none;">请等待 <span id="timer">60</span> 秒后再发送验证码。</p>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const sendCodeBtn = document.getElementById('send-code-btn');
+    const registerBtn = document.getElementById('register-btn');
+    const verificationCodeField = document.getElementById('verification-code-field');
+    const passwordField = document.getElementById('password-field');
+    const countdownTimer = document.getElementById('countdown-timer');
+    const timerSpan = document.getElementById('timer');
+    let countdown;
+
+    sendCodeBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const email = document.getElementById('email').value;
+
+        if (!email) {
+            alert("请输入邮箱地址");
+            return;
+        }
+
+        this.disabled = true;
+
+        fetch('/send_code', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            },
+            body: new URLSearchParams({ 'email': email })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('验证码已发送，请检查您的邮箱。');
+                startCooldown();
+                verificationCodeField.style.display = 'block';
+                passwordField.style.display = 'block';
+                registerBtn.style.display = 'block';
+            } else {
+                alert('发送验证码失败，请稍后再试。');
+                sendCodeBtn.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('发生错误，请稍后再试。');
+            sendCodeBtn.disabled = false;
+        });
+    });
+
+    function startCooldown() {
+        countdownTimer.style.display = 'block';
+        let timeLeft = 60;
+        timerSpan.innerText = timeLeft;
+        sendCodeBtn.innerText = `等待 ${timeLeft}s`;
+
+        countdown = setInterval(() => {
+            timeLeft--;
+            timerSpan.innerText = timeLeft;
+            sendCodeBtn.innerText = `等待 ${timeLeft}s`;
+
+            if (timeLeft <= 0) {
+                clearInterval(countdown);
+                sendCodeBtn.disabled = false;
+                sendCodeBtn.innerText = '发送验证码';
+                countdownTimer.style.display = 'none';
+            }
+        }, 1000);
+    }
+});
+</script>
+{% endblock %}

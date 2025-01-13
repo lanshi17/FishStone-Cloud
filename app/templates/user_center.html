@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>用户中心</h2>
+    <a href="javascript:history.back()" class="btn btn-secondary">返回上一层</a>
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">更改邮箱</h5>
+                    <p class="card-text">更改您的登录邮箱。</p>
+                    <a href="{{ url_for('auth.change_email') }}" class="btn btn-primary">修改</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title
+                    ">修改密码</h5>
+                    <p class="card-text">更改您的登录密码。</p>
+                    <a href="{{ url_for('auth.change_password') }}" class="btn btn-primary">修改</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title
+                    ">注销账户</h5>
+                    <p class="card-text">删除您的账户。</p>
+                    <a href="{{ url_for('auth.delete_account') }}" class="btn btn-danger">注销</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

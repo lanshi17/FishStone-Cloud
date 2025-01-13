@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <h3 class="text-center mb-4">修改电子邮件</h3>
+
+            <!-- Display flash messages if any -->
+            <div id="message"></div>
+            {% with messages = get_flashed_messages(with_categories=True) %}
+                {% if messages %}
+                    <div id="flash-messages-container">
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <form id="change-email-form" method="POST" action="{{ url_for('auth.change_email') }}">
+                {{ form.hidden_tag() }}
+
+                <!-- New Email Field -->
+                <div class="form-group mb-3">
+                    <label for="email">新邮箱</label>
+                    {{ form.email(class="form-control", id="email", placeholder="请输入新电子邮件") }}
+                    {% if form.email.errors %}
+                        <small class="text-danger">{{ form.email.errors[0] }}</small>
+                    {% endif %}
+                </div>
+
+                <!-- Verification Code Field -->
+                <div class="form-group mb-3">
+                    <label for="verification_code">验证码</label>
+                    {{ form.verification_code(class="form-control", id="verification_code", placeholder="请输入验证码") }}
+                    {% if form.verification_code.errors %}
+                        <small class="text-danger">{{ form.verification_code.errors[0] }}</small>
+                    {% endif %}
+                </div>
+
+                <div class="d-grid gap-2">
+                    <!-- 发送验证码按钮 -->
+                    {{ form.send_code(class="btn btn-secondary btn-block", id="send-code", value="发送验证码") }}
+                    <!-- 确认修改邮箱按钮 -->
+                    {{ form.submit(class="btn btn-primary btn-block", id="submit-change", value="确认修改邮箱") }}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 冷却时间控制
+    const sendCodeButton = document.getElementById('send-code');
+    let cooldown = false;
+
+    sendCodeButton.addEventListener('click', function(event) {
+        if (!cooldown) {
+            event.preventDefault();
+            sendVerificationCode();
+        }
+    });
+
+    function startCooldown() {
+        let countdown = 60; // 冷却时间为60秒
+        cooldown = true;
+
+        // 禁用按钮并显示倒计时
+        sendCodeButton.disabled = true;
+        sendCodeButton.value = `发送验证码 (${countdown})`;
+
+        const timer = setInterval(() => {
+            countdown--;
+            sendCodeButton.value = `发送验证码 (${countdown})`;
+
+            // 当倒计时结束时，启用按钮
+            if (countdown <= 0) {
+                clearInterval(timer);
+                sendCodeButton.disabled = false;
+                sendCodeButton.value = "发送验证码";
+                cooldown = false;
+            }
+        }, 1000); // 每秒更新一次
+    }
+
+    function sendVerificationCode() {
+        var form = document.getElementById('change-email-form');
+        var formData = new FormData(form);
+        formData.append('send_code', 'Send Verification Code');
+
+        fetch('{{ url_for("auth.change_email") }}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': '{{ form.csrf_token._value() }}'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(errorData => {
+                    throw new Error(errorData.message || '未知错误');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            var messageDiv = document.getElementById('message');
+            if (data.success) {
+                messageDiv.innerHTML = '<div class="alert alert-info">' + data.message + '</div>';
+                startCooldown();
+            } else {
+                messageDiv.innerHTML = '<div class="alert alert-danger">' + data.message + '</div>';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            var messageDiv = document.getElementById('message');
+            messageDiv.innerHTML = '<div class="alert alert-danger">发生错误,请稍后再试!</div>';
+        });
+    }
+
+    document.getElementById('submit-change').addEventListener('submit', function(event) {
+        event.preventDefault();
+        var form = event.target;
+        var formData = new FormData(form);
+        formData.append('submit', 'Change Email');
+
+        fetch('{{ url_for("auth.change_email") }}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': '{{ form.csrf_token._value() }}'
+            }
+        })
+        .then(response => {
+            return response.json().then(data => ({
+                status: response.status,
+                body: data
+            }));
+        })
+        .then(({ status, body }) => {
+            var messageDiv = document.getElementById('message');
+            if (status === 200 && body.success) {
+                messageDiv.innerHTML = '<div class="alert alert-info">' + body.message + '</div>';
+                alert('邮箱修改成功!');
+                window.location.reload();
+                form.reset();
+            } else if (status === 400) {
+                messageDiv.innerHTML = '<div class="alert alert-danger">' + body.message + '</div>';
+                if (body.errors) {
+                    for (let field in body.errors) {
+                        messageDiv.innerHTML += '<p>' + field + ': ' + body.errors[field].join(', ') + '</p>';
+                    }
+                }
+            } else {
+                messageDiv.innerHTML = '<div class="alert alert-danger">' + body.message + '</div>';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            var messageDiv = document.getElementById('message');
+            messageDiv.innerHTML = '<div class="alert alert-danger">发生错误,请稍后再试!</div>';
+        });
+    });
+
+    // 自动淡化消息
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+            var flashMessages = document.getElementById('flash-messages-container');
+            if (flashMessages) {
+                var alerts = flashMessages.getElementsByClassName('alert');
+                for (var i = 0; i < alerts.length; i++) {
+                    alerts[i].classList.add('fade-out');
+                }
+                setTimeout(function() {
+                    flashMessages.innerHTML = '';
+                }, 1000);  // 1秒的淡化时间
+            }
+        }, 5000);  // 5秒后开始淡化
+    });
+</script>
+{% endblock %}
