@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # FishStone-Cloud
 =======
 # 文件管理系统
@@ -152,5 +151,3 @@ flask run
 3. 提交你的更改 (`git commit -m 'Add some feature'`)
 4. 推送到分支 (`git push origin feature/new-feature`)
 5. 打开 Pull Request
-
->>>>>>> master
