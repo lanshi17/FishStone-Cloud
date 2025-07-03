@@ -151,3 +151,7 @@ flask run
 3. 提交你的更改 (`git commit -m 'Add some feature'`)
 4. 推送到分支 (`git push origin feature/new-feature`)
 5. 打开 Pull Request
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=lanshi17/FishStone-Cloud&type=Date)](https://www.star-history.com/#lanshi17/FishStone-Cloud&Date)
